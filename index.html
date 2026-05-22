@@ -1063,25 +1063,20 @@ function executeSupervisorAuthorizationOverride(respondentId) {
       alert('⚠️ Apps Script URL Error\n\nThe configured Apps Script URL is a Library URL, not a Web App URL.\n\nPlease go to Edit Project and replace it with your deployed Web App URL (it should contain "/macros/s/" and end in "/exec").\n\nThe override has been saved locally only.');
       return;
     }
-    const payload = {
+    // GET request with URL params — no-cors GET actually delivers params to Apps Script
+    // (no-cors POST body is silently stripped by the browser before it reaches the server)
+    const params = new URLSearchParams({
       respondentId:   respondentId,
       tabIndex:       String(currentlyActiveTabIndex),
       supervisorId:   activeSupervisor,
       supervisorName: supervisorLabel,
       action:         'Unlock',
       auditNote:      reasonOverride.trim()
-    };
-
-    fetch(workingTab.apiUrl, {
-      method:  'POST',
-      mode:    'no-cors',   // Apps Script deployed as web app requires no-cors from external origins
-      headers: { 'Content-Type': 'text/plain' },
-      body:    JSON.stringify(payload)
-    }).then(() => {
-      console.log(`Override for ${respondentId} submitted to sheet.`);
-    }).catch(err => {
-      console.warn("Sheet write failed (local cache still active):", err);
     });
+
+    fetch(`${workingTab.apiUrl}?${params.toString()}`, { mode: 'no-cors' })
+      .then(() => console.log(`Override for ${respondentId} submitted to sheet via GET.`))
+      .catch(err => console.warn("Sheet GET write failed (local cache still active):", err));
 
     alert(`✅ Case [ ${respondentId} ] unlocked.\nSaved locally and submitted to the shared Google Sheet.\nOthers will see this on their next Synchronize.`);
   } else {
