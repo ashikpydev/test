@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dRi · Phone Survey Tracker</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --dri-red:#C01823;
+  --dri-red-dark:#9B121B;
+  --dri-red-light:#FBE8E9;
+  --dri-accent-blue:#6ACFF6;
+  
+  --bg-dark:#c01823;
+  --bg-sidebar:#242E36;
+  --bg-main:#F3F4F6;
+  --card-bg:#ffffff;
+  --border-color:#E5E7EB;
+  --text-main:#111827;
+  --text-muted:#4B5563;
+  --text-light:#9CA3AF;
+  --radius-lg:8px;
+  --radius-md:6px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.05),0 1px 2px rgba(0,0,0,.03);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,.08),0 2px 4px -1px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);
+  
+  --color-success-bg:#E6F4EA;--color-success-text:#137333;--color-success-border:#137333;
+  --color-danger-bg:#FCE8E6;--color-danger-text:#C5221F;--color-danger-border:#C5221F;
+  --color-warning-bg:#FEF3C7;--color-warning-text:#B45309;--color-warning-border:#B45309;
+}
+
+body{font-family:'Montserrat',sans-serif;background:var(--bg-main);color:var(--text-main);height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13.5px;}
+
+.topnav{height:60px;background:var(--bg-dark);display:flex;align-items:center;gap:16px;padding:0 24px;flex-shrink:0;box-shadow:0 3px 0 var(--dri-red);z-index:200;}
+.logo-container{display:flex;align-items:center;gap:8px;}
+.logo-text{font-size:24px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;}
+.logo-text span{color:var(--dri-red);}
+.nav-divider{width:1px;height:24px;background:rgba(255,255,255,.2);}
+.nav-subtitle{font-size:12px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:0.5px;text-transform:uppercase;}
+.nav-spacer{flex:1;}
+.sync-badge{font-size:12px;font-weight:600;color:rgba(255,255,255,.6);background:rgba(255,255,255,.05);padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:6px;}
+.btn-sync{background:var(--card-bg);border:none;color:var(--dri-red);border-radius:var(--radius-md);padding:8px 16px;font-size:12.5px;font-family:inherit;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;}
+.btn-sync:hover{background:#F9FAFB;box-shadow:var(--shadow-sm);}
+
+.workspace{display:flex;flex:1;overflow:hidden;}
+
+.sidebar{width:200px;background:var(--bg-sidebar);flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.05);overflow:hidden;transition:width .22s cubic-bezier(.4,0,.2,1);}
+.sidebar.collapsed{width:44px;}
+
+.sb-toggle{display:flex;align-items:center;justify-content:center;padding:10px 0;cursor:pointer;color:rgba(255,255,255,.45);background:none;border:none;width:100%;transition:color .15s;}
+.sb-toggle:hover{color:#fff;}
+.sb-toggle .material-icons-round{font-size:20px;transition:transform .22s;}
+.sidebar.collapsed .sb-toggle .material-icons-round{transform:rotate(180deg);}
+
+.sidebar-section-title{font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.4);text-transform:uppercase;padding:14px 16px 6px;white-space:nowrap;overflow:hidden;transition:opacity .15s;}
+.sidebar.collapsed .sidebar-section-title{opacity:0;pointer-events:none;}
+
+.project-item{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;border-left:3px solid transparent;transition:all .15s;user-select:none;white-space:nowrap;overflow:hidden;}
+.project-item:hover{background:rgba(255,255,255,.06);color:#ffffff;}
+.project-item.active{background:rgba(255,255,255,.1);color:#ffffff;border-left-color:var(--dri-accent-blue);}
+.project-status-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);flex-shrink:0;}
+.project-item.active .project-status-dot{background:var(--dri-accent-blue);}
+.project-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:opacity .15s;}
+.sidebar.collapsed .project-name{opacity:0;width:0;flex:0;}
+.project-actions{display:none;gap:4px;}
+.project-item:hover .project-actions{display:flex;}
+.sidebar.collapsed .project-item:hover .project-actions{display:none;}
+.action-icon-btn{background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;padding:4px;border-radius:4px;display:flex;align-items:center;justify-content:center;}
+.action-icon-btn:hover{color:#ffffff;background:rgba(255,255,255,0.1);}
+.action-icon-btn .material-icons-round{font-size:16px;}
+
+.sidebar.collapsed .project-item{position:relative;}
+.sidebar.collapsed .project-item:hover::after{content:attr(data-name);position:absolute;left:52px;top:50%;transform:translateY(-50%);background:#111;color:#fff;padding:5px 10px;border-radius:5px;font-size:12px;font-weight:600;white-space:nowrap;z-index:999;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.3);}
+
+.btn-add-project{margin:8px 8px;padding:9px;background:rgba(255,255,255,.05);border:1px dashed rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:var(--radius-md);cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s;white-space:nowrap;overflow:hidden;}
+.btn-add-project:hover{background:rgba(255,255,255,.15);color:#ffffff;border-color:var(--dri-accent-blue);}
+.btn-add-project .btn-add-label{transition:opacity .15s;white-space:nowrap;}
+.sidebar.collapsed .btn-add-project .btn-add-label{display:none;}
+.sidebar.collapsed .btn-add-project{margin:8px 6px;padding:9px 0;justify-content:center;}
+
+.sb-footer-expanded{transition:opacity .15s;}
+.sidebar.collapsed .sb-footer-expanded{opacity:0;pointer-events:none;height:0;overflow:hidden;padding:0;margin:0;border:none;}
+
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.content-header{background:var(--card-bg);border-bottom:1px solid var(--border-color);padding:0 24px;flex-shrink:0;box-shadow:var(--shadow-sm);}
+.title-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0 12px;}
+.main-title{font-size:18px;font-weight:800;color:var(--text-main);}
+.tabs-row{display:flex;overflow-x:auto;gap:4px;}
+.tab-item{padding:12px 20px;font-size:13px;font-weight:700;color:var(--text-light);border-bottom:3px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap;user-select:none;}
+.tab-item:hover{color:var(--dri-red);}
+.tab-item.active{color:var(--dri-red);border-bottom-color:var(--dri-red);}
+
+.content-body{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:20px;}
+
+.metrics-container{display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:16px;}
+.metric-card{background:var(--card-bg);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);border:1px solid var(--border-color);border-top:4px solid var(--accent-color, var(--dri-red));display:flex;flex-direction:column;justify-content:space-between;}
+.metric-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-light);margin-bottom:6px;}
+.metric-value{font-size:26px;font-weight:800;color:var(--text-main);line-height:1;}
+
+.filter-panel{background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:16px;display:flex;gap:12px;align-items:center;box-shadow:var(--shadow-sm);flex-wrap:wrap;}
+.filter-input, .filter-select{border:1px solid var(--border-color);border-radius:var(--radius-md);padding:10px 14px;font-size:13px;font-family:inherit;font-weight:500;color:var(--text-main);background:var(--bg-main);outline:none;transition:all .15s;}
+.filter-input:focus, .filter-select:focus{border-color:var(--dri-red);background:#ffffff;box-shadow:0 0 0 3px rgba(192,24,35,0.1);}
+.filter-search-field{flex:1;min-width:200px;}
+.filter-results-counter{font-size:12.5px;font-weight:600;color:var(--text-muted);margin-left:auto;}
+
+.table-container{background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column;}
+.table-scrollable-area{overflow:auto;flex:1;}
+table{width:100%;border-collapse:collapse;font-size:13px;text-align:left;}
+th{position:sticky;top:0;background:#F9FAFB;padding:10px 12px;font-weight:700;font-size:11.5px;color:var(--text-muted);border-bottom:1px solid var(--border-color);z-index:10;white-space:nowrap;user-select:none;cursor:pointer;}
+th:hover{color:var(--text-main);background:#EDF2F7;}
+td{padding:10px 12px;border-bottom:1px solid var(--border-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+tr.interactive-table-row{cursor:pointer;transition:all 0.1s;}
+tr.interactive-table-row:hover{background-color:#F9FAFB;}
+
+.status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:12px;font-size:11.5px;font-weight:700;}
+.status-pill.status-success{background-color:var(--color-success-bg);color:var(--color-success-text);}
+.status-pill.status-danger{background-color:var(--color-danger-bg);color:var(--color-danger-text);}
+.status-pill.status-warning{background-color:var(--color-warning-bg);color:var(--color-warning-text);}
+.status-pill .material-icons-round{font-size:14px;}
+
+.history-counter-badge{background:var(--bg-sidebar);color:#ffffff;font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:600;padding:4px 8px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;}
+
+.btn-view-details{background:none;border:none;color:var(--dri-red);font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-family:inherit;}
+.btn-view-details:hover{color:var(--dri-red-dark);text-decoration:underline;}
+.btn-view-details .material-icons-round{font-size:16px;}
+
+.btn-supervisor-action{background:var(--color-warning-bg);border:1px solid var(--color-warning-border);color:var(--color-warning-text);font-weight:700;cursor:pointer;padding:4px 8px;border-radius:var(--radius-md);display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-family:inherit;transition:all 0.1s;}
+.btn-supervisor-action:hover{background:var(--color-danger-bg);color:var(--color-danger-text);border-color:var(--color-danger-border);}
+
+.modal-backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(29,37,44,0.6);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:1000;padding:24px;}
+.modal-backdrop.modal-is-visible{display:flex;}
+.modal-window{background:var(--card-bg);border-radius:var(--radius-lg);width:100%;max-width:600px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;max-height:85vh;overflow:hidden;border:1px solid var(--border-color);}
+.modal-window.size-wide{max-width:1050px;}
+.modal-header{padding:18px 24px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;background:#F9FAFB;}
+.modal-headline{font-size:15px;font-weight:800;color:var(--text-main);display:flex;align-items:center;gap:8px;}
+.modal-close-trigger{background:none;border:none;cursor:pointer;color:var(--text-light);display:flex;align-items:center;justify-content:center;}
+.modal-close-trigger:hover{color:var(--text-main);}
+.modal-body{padding:24px;overflow-y:auto;flex:1;}
+.modal-footer{padding:14px 24px;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:12px;background:#F9FAFB;}
+
+.btn-base{padding:10px 18px;border-radius:var(--radius-md);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s;}
+.btn-secondary{background:#ffffff;border-color:var(--border-color);color:var(--text-muted);}
+.btn-secondary:hover{background:var(--bg-main);color:var(--text-main);}
+.btn-action-primary{background:var(--dri-red);color:#ffffff;}
+.btn-action-primary:hover{background:var(--dri-red-dark);}
+
+.history-row-item:nth-child(even){background-color:#F9FAFB;}
+.history-row-item.is-latest-status{border-left:4px solid var(--dri-red);background-color:rgba(192,24,35,0.03);}
+.latest-resolution-tag{font-size:9.5px;font-weight:800;text-transform:uppercase;background:var(--dri-accent-blue);color:var(--text-main);padding:2px 6px;border-radius:4px;letter-spacing:0.5px;display:inline-block;margin-left:8px;}
+
+.tab-config-container{display:flex;gap:10px;align-items:center;margin-bottom:12px;background:#F9FAFB;padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);}
+.tab-config-scrollbox{max-height:220px;overflow-y:auto;border:1px solid var(--border-color);padding:8px;border-radius:var(--radius-md);margin-top:6px;}
+
+.empty-dashboard-placeholder{text-align:center;padding:60px 24px;color:var(--text-light);}
+.empty-placeholder-graphic{.material-icons-round{font-size:56px;color:var(--text-light);margin-bottom:12px;}}
+
+.switch-container { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; }
+.switch-input { display: none; }
+.switch-slider { position: relative; width: 36px; height: 20px; background-color: var(--text-light); border-radius: 20px; transition: background-color 0.15s; }
+.switch-slider::before { content: ""; position: absolute; width: 14px; height: 14px; border-radius: 50%; background-color: white; top: 3px; left: 3px; transition: transform 0.15s; }
+.switch-input:checked + .switch-slider { background-color: var(--dri-red); }
+.switch-input:checked + .switch-slider::before { transform: translateX(16px); }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* KPI Performance Card Layout Extensions */
+.kpi-performance-panel {
+  background: linear-gradient(135deg, #242E36 0%, #1A2228 100%);
+  border-radius: var(--radius-lg);
+  padding: 18px 24px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 4px;
+}
+.kpi-title-block { display: flex; align-items: center; gap: 12px; }
+.kpi-title-text h4 { font-size: 14px; font-weight: 700; color: #ffffff; margin-bottom: 2px; }
+.kpi-title-text p { font-size: 11.5px; color: rgba(255,255,255,0.5); font-weight: 500; }
+.kpi-metrics-row { display: flex; gap: 40px; align-items: center; }
+.kpi-sub-item { text-align: right; }
+.kpi-sub-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+.kpi-sub-value { font-size: 18px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: #ffffff; }
+.kpi-sub-value.highlight-rate { color: var(--dri-accent-blue); font-size: 22px; }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+<div class="logo-container">
+  <img 
+    id="globalAppLogo"
+    src="https://dri-int.org/wp-content/uploads/2021/07/Logo.jpg"
+    alt="Organization Logo"
+    style="height:36px;width:auto;object-fit:contain;border-radius:4px;background:white;padding:3px;"
+  >
+</div>
+  <div class="nav-divider"></div>
+  <div class="nav-subtitle" style="color:rgba(255,255,255,0.9);">Phone Survey Tracker</div>
+  <div class="nav-spacer"></div>
+  
+  <div style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.12); padding:4px 10px; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.2);">
+    <span class="material-icons-round" style="font-size:16px; color:#6ACFF6;">admin_panel_settings</span>
+    <select id="uiSupervisorIdentity" class="filter-select" style="background:transparent; border:none; color:white; padding:4px; font-size:12px; font-weight:700; outline:none; cursor:pointer;" onchange="handleSupervisorIdentityChange()">
+      <option value="SUP_01" style="color:var(--text-main);">Supervisor Alpha (PIN: 1234)</option>
+      <option value="SUP_02" style="color:var(--text-main);">Supervisor Beta (PIN: 5678)</option>
+      <option value="SUP_03" style="color:var(--text-main);">Supervisor Gamma (PIN: 9012)</option>
+    </select>
+  </div>
+
+  <div id="syncStatusFeedback" class="sync-badge">
+    <span class="material-icons-round" style="font-size:16px;">cloud_off</span>
+    No data stream attached
+  </div>
+  <div id="lastSyncTimer" style="display:none; align-items:center; gap:5px; font-size:11.5px; font-weight:600; color:rgba(255,255,255,0.9); background:rgba(255,255,255,0.12); padding:5px 12px; border-radius:16px; border:1px solid rgba(255,255,255,0.2);">
+    <span class="material-icons-round" style="font-size:14px; color:#6ACFF6;">history</span>
+    <span id="lastSyncTimerText"></span>
+  </div>
+  <button class="btn-sync" onclick="synchronizeProjectDataStream()">
+    <span class="material-icons-round" style="font-size:18px;">sync</span> Synchronize
+  </button>
+</div>
+
+<div class="workspace">
+  <div class="sidebar" id="appSidebar">
+    <button class="sb-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+      <span class="material-icons-round">chevron_left</span>
+    </button>
+    <div class="sidebar-section-title">Active Research Projects</div>
+    <div id="projectDOMList"></div>
+    <div class="btn-add-project" onclick="triggerAddProjectModal()">
+      <span class="material-icons-round" style="font-size:18px;flex-shrink:0;">add_circle_outline</span>
+      <span class="btn-add-label">Add Project</span>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:5px; padding:6px 8px; margin-top:auto;">
+      <button class="btn-add-project" style="border-style:solid; background:rgba(106,207,246,0.12); border-color:rgba(106,207,246,0.5); color:#fff; margin:0;" onclick="exportProjectStructureConfiguration()" title="Export project config including supervisor overrides">
+        <span class="material-icons-round" style="font-size:16px;flex-shrink:0;">download</span>
+        <span class="btn-add-label">Export Profile JSON</span>
+      </button>
+      <button class="btn-add-project" style="border-style:solid; background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.2); color:#fff; margin:0;" onclick="importProjectStructureConfiguration()" title="Import collaborative project profile">
+        <span class="material-icons-round" style="font-size:16px;flex-shrink:0;">upload</span>
+        <span class="btn-add-label">Import Profile JSON</span>
+      </button>
+    </div>
+
+    <div class="sb-footer-expanded" style="border-top:1px solid rgba(255,255,255,0.07); padding:14px 16px 18px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span class="material-icons-round" style="font-size:14px;color:rgba(255,255,255,0.3);">info</span>
+        <span style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,0.3);">About</span>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);line-height:1.7;">
+        Created by<br>
+        <span style="color:rgba(255,255,255,0.65);font-weight:700;">Data Analytics Team</span><br>
+        Development Research Initiative (dRi)
+      </div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="content-header">
+      <div class="title-row">
+        <div id="activeProjectHeadline" class="main-title">No Active Stream Selected</div>
+      </div>
+      <div id="projectFormTabsContainer" class="tabs-row"></div>
+    </div>
+
+    <div class="content-body">
+      
+      <div class="kpi-performance-panel">
+        <div class="kpi-title-block">
+          <span class="material-icons-round" style="font-size: 32px; color: var(--dri-accent-blue);">analytics</span>
+          <div class="kpi-title-text">
+            <h4 id="kpiActiveSupervisorLabel">Supervisor Performance Track</h4>
+            <p>Refusal Recovery Conversion Performance Indicators Summary</p>
+          </div>
+        </div>
+        <div class="kpi-metrics-row">
+          <div class="kpi-sub-item">
+            <div class="kpi-sub-label">Total Refusals Recorded</div>
+            <div id="kpiTotalRefusals" class="kpi-sub-value">0</div>
+          </div>
+          <div class="kpi-sub-item">
+            <div class="kpi-sub-label">Unlocked Actions Issued</div>
+            <div id="kpiTotalUnlocked" class="kpi-sub-value">0</div>
+          </div>
+          <div class="kpi-sub-item">
+            <div class="kpi-sub-label">Successful Conversions</div>
+            <div id="kpiSuccessfulConversions" class="kpi-sub-value" style="color: #69DB7C;">0</div>
+          </div>
+          <div class="kpi-sub-item">
+            <div class="kpi-sub-label">Bypass Success Rate</div>
+            <div id="kpiConversionSuccessRate" class="kpi-sub-value highlight-rate">0.0%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="metrics-container">
+        <div class="metric-card" style="--accent-color: var(--bg-dark);">
+          <div class="metric-label">Cumulative Submissions</div>
+          <div id="metricTotalSubmissions" class="metric-value">0</div>
+        </div>
+        <div class="metric-card" style="--accent-color: var(--dri-accent-blue);">
+          <div class="metric-label">Unique Respondents</div>
+          <div id="metricUniqueRespondents" class="metric-value">0</div>
+        </div>
+        <div class="metric-card" style="--accent-color: var(--color-success-text);">
+          <div class="metric-label">Consented Surveys</div>
+          <div id="metricConsented" class="metric-value">0</div>
+        </div>
+        <div class="metric-card" style="--accent-color: var(--color-danger-text);">
+          <div class="metric-label">Refused / Locked</div>
+          <div id="metricRejected" class="metric-value">0</div>
+        </div>
+        <div class="metric-card" style="--accent-color: var(--color-warning-text);">
+          <div class="metric-label">Pending / Call Back</div>
+          <div id="metricPendingCalls" class="metric-value">0</div>
+        </div>
+      </div>
+
+      <div class="filter-panel">
+        <input type="text" id="uiFilterSearch" class="filter-input filter-search-field" placeholder="Search by Respondent ID or Name string..." oninput="executeDataFiltering()">
+        <select id="uiFilterEnumerator" class="filter-select" onchange="executeDataFiltering()">
+          <option value="">All Enumerators</option>
+        </select>
+        <select id="uiFilterLocation" class="filter-select" onchange="executeDataFiltering()">
+          <option value="">All Locations / Categories</option>
+        </select>
+        <select id="uiFilterResolutionStatus" class="filter-select" onchange="executeDataFiltering()">
+          <option value="">All Final Statuses</option>
+        </select>
+        
+        <label class="switch-container">
+          <input type="checkbox" id="uiFilterSupervisorReviewOnly" class="switch-input" onchange="executeDataFiltering()">
+          <div class="switch-slider"></div>
+          <span>Show Locked Refusals Only</span>
+        </label>
+
+        <div id="uiFilterCounterOutput" class="filter-results-counter">Displaying 0 unique records</div>
+      </div>
+
+      <div class="table-container">
+        <div class="table-scrollable-area">
+          <table id="trackingPrimaryGrid">
+            <thead>
+              <tr>
+                <th onclick="toggleGridSort('id')">ID ⇅</th>
+                <th onclick="toggleGridSort('name')">Name ⇅</th>
+                <th onclick="toggleGridSort('location')">Location ⇅</th>
+                <th onclick="toggleGridSort('historyCount')">Calls ⇅</th>
+                <th onclick="toggleGridSort('status')">Status ⇅</th>
+                <th onclick="toggleGridSort('consent')">Consent ⇅</th>
+                <th onclick="toggleGridSort('reason')">Reason ⇅</th>
+                <th onclick="toggleGridSort('enumerator')">Enumerator ⇅</th>
+                <th onclick="toggleGridSort('timestamp')">Date ⇅</th>
+                <th>Time</th>
+                <th style="text-align: center;">Supervisor Authorization Action Control</th>
+                <th style="text-align: center;">Trace Analytics Logs</th>
+              </tr>
+            </thead>
+            <tbody id="trackingTableBodyRowContainer"></tbody>
+          </table>
+          <div id="emptyGridPlaceholder" class="empty-dashboard-placeholder">
+            <div class="empty-placeholder-graphic">
+              <span class="material-icons-round">analytics</span>
+            </div>
+            <p style="font-weight:500;">No processed survey tracking data detected.<br>Please synchronize an active sheet endpoint link or load a regional CSV dump log matrix.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="projectConfigDialog" class="modal-backdrop">
+  <div class="modal-window">
+    <div class="modal-header">
+      <div id="configModalTitle" class="modal-headline"><span class="material-icons-round">settings</span> Manage Survey Source Configuration</div>
+      <button class="modal-close-trigger" onclick="dismissModalWindow('projectConfigDialog')">
+        <span class="material-icons-round">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-input-group" style="display:flex; flex-direction:column; gap:6px; margin-bottom:16px;">
+        <label style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted);">Survey Project Title Label</label>
+        <input type="text" id="cfgProjectNameInput" class="filter-input" placeholder="e.g., Household Baseline Survey Project">
+      </div>
+      
+      <div style="margin-top:18px; margin-bottom:6px;">
+        <label style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted);">Form Pipelines (Google Sheets Published CSV Endpoints)</label>
+      </div>
+
+      <div class="tab-config-container" style="flex-direction:column; gap:8px;">
+        <input type="text" id="cfgTabTitleInput" placeholder="Tab Label (e.g., Phone Survey Wave 1)" style="padding:8px; border:1px solid var(--border-color); border-radius:4px; font-size:12.5px; font-family:inherit; width:100%;">
+        <input type="text" id="cfgTabUrlInput" placeholder="Main Survey CSV URL (Google Sheets → File → Publish to web → CSV)" style="padding:8px; border:1px solid var(--border-color); border-radius:4px; font-size:12.5px; font-family:inherit; width:100%;">
+        <input type="text" id="cfgTabOverridesUrlInput" placeholder="Supervisor_Overrides tab CSV URL (same sheet, Overrides tab, also published)" style="padding:8px; border:1px solid var(--border-color); border-radius:4px; font-size:12.5px; font-family:inherit; width:100%;">
+        <input type="text" id="cfgTabApiUrlInput" placeholder="Apps Script Web App URL — must be format: https://script.google.com/macros/s/.../exec" style="padding:8px; border:1px solid var(--border-color); border-radius:4px; font-size:12.5px; font-family:inherit; width:100%;">
+        <button class="btn-base btn-action-primary" onclick="appendFormTabConfigRow()" style="padding:8px 14px; font-size:12px; align-self:flex-end;">+ Add Tab</button>
+      </div>
+
+      <div class="tab-config-scrollbox" id="cfgTabMappingContainer"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-base btn-secondary" onclick="dismissModalWindow('projectConfigDialog')">Discard Changes</button>
+      <button class="btn-base btn-action-primary" onclick="commitProjectConfigurationProfile()">Save Structural Profile</button>
+    </div>
+  </div>
+</div>
+
+<div id="respondentHistoryDialog" class="modal-backdrop">
+  <div class="modal-window size-wide">
+    <div class="modal-header" style="background: var(--dri-red-light); border-bottom:2px solid var(--dri-red);">
+      <div class="modal-headline" style="color: var(--dri-red-dark); font-weight:800;">
+        <span class="material-icons-round">history_toggle_off</span> Verification History & Diagnostics Audit Log
+      </div>
+      <button class="modal-close-trigger" onclick="dismissModalWindow('respondentHistoryDialog')">
+        <span class="material-icons-round" style="color:var(--dri-red-dark);">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#F9FAFB; padding:16px; border-radius:var(--radius-lg); border:1px solid var(--border-color); margin-bottom:20px; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+        <div>
+          <span style="color:var(--text-light); font-size:10.5px; font-weight:700; text-transform:uppercase;">Tracking Target ID</span>
+          <div id="modalProfileId" style="font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px; color:var(--dri-red-dark); margin-top:2px;">—</div>
+        </div>
+        <div>
+          <span style="color:var(--text-light); font-size:10.5px; font-weight:700; text-transform:uppercase;">Respondent Legal Name</span>
+          <div id="modalProfileName" style="font-weight:700; font-size:14px; margin-top:2px; color:var(--text-main);">—</div>
+        </div>
+        <div>
+          <span style="color:var(--text-light); font-size:10.5px; font-weight:700; text-transform:uppercase;">Assigned Location / Group</span>
+          <div id="modalProfileLocation" style="font-weight:600; color:var(--text-muted); margin-top:2px; font-size:13.5px;">—</div>
+        </div>
+      </div>
+      
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
+        <div style="background:#F0FDF4; padding:16px; border-radius:var(--radius-lg); border:1px solid #BBF7D0;">
+            <h4 style="font-size:11px; font-weight:800; text-transform:uppercase; color:#166534; margin-bottom:10px;">Contact Information</h4>
+            <div style="display:flex; gap:16px; font-size:13px;">
+                <div><span style="color:#166534; font-weight:700;">Phone 1:</span> <span id="modalProfilePhn1" style="font-family:'JetBrains Mono', monospace;">—</span></div>
+                <div><span style="color:#166534; font-weight:700;">Phone 2:</span> <span id="modalProfilePhn2" style="font-family:'JetBrains Mono', monospace;">—</span></div>
+            </div>
+        </div>
+        <div style="background:#EFF6FF; padding:16px; border-radius:var(--radius-lg); border:1px solid #BFDBFE;">
+            <h4 style="font-size:11px; font-weight:800; text-transform:uppercase; color:#1E40AF; margin-bottom:10px;">Scheduled Interview Details</h4>
+            <div id="modalProfileSchedule" style="font-size:12.5px; color:#1E40AF;">—</div>
+        </div>
+      </div>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h4 style="font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted);">Historical Submission Trace Logs (Oldest to Newest)</h4>
+        <div style="font-size:11.5px; font-weight:600; background:var(--bg-main); padding:6px 12px; border-radius:4px; font-family:'JetBrains Mono', monospace;" id="modalProfileTotalCounter">Total Database Hits Match: 0</div>
+      </div>
+      
+      <div style="overflow-x:auto; border:1px solid var(--border-color); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm);">
+        <table style="width:100%; font-size:12.5px;">
+          <thead>
+            <tr style="background:#F3F4F6;">
+              <th style="padding:12px; font-size:11px;">Index Stream</th>
+              <th style="padding:12px; font-size:11px;">Server Timestamp</th>
+              <th style="padding:12px; font-size:11px;">Call Dial Status Label</th>
+              <th style="padding:12px; font-size:11px;">Consent Form Input</th>
+              <th style="padding:12px; font-size:11px;">Rejection Reason</th>
+              <th style="padding:12px; font-size:11px;">Field Enumerator</th>
+              <th style="padding:12px; font-size:11px; text-align: center;">Dial Order</th>
+            </tr>
+          </thead>
+          <tbody id="respondentHistoryLogsContainer"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-base btn-secondary" onclick="dismissModalWindow('respondentHistoryDialog')">Close Log Inspector</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STATUS_VALUE_MAPPING = {
+  '1': 'Available',
+  '2': 'Not Reachable / Phone Off',
+  '3': 'Did Not Pick Up / No Answer',
+  '4': 'Wrong Number'
+};
+
+const CONSENT_VALUE_MAPPING = {
+  '1': 'Agreed / Yes',
+  '0': 'Refused / No',
+  '98': "Don't Know"
+};
+
+const SUPERVISOR_AUTHENTICATION_DB = {
+  'SUP_01': '1234',
+  'SUP_02': '5678',
+  'SUP_03': '9012'
+};
+
+const INTEGRATED_COLUMN_HEADERS = {
+  id: ['resp_id', 'respondent id', 'respondent_id', 'id', 'key', 'worker_id', 'target_id'],
+  name: ['respondent name', 'name', 'worker_name', 'manager_name', 'resp_name', 'student_name', 'target_name'],
+  location: ['location', 'factory', 'district', 'upazila', 'village', 'group', 'pull_factory_name', 'area'],
+  status: ['status', 'call_status', 'call_avail', 'tracking_status'],
+  consent: ['consent', 'agreement', 'consented'],
+  reason: ['rsn_nt_consent', 'reject_reason', 'refusal_reason', 'reason', 'why_no', 'why_refused', 'no_consent_reason'],
+  enumerator: ['enumerator', 'enum', 'enum_lab', 'enumerator name', 'enum_name'],
+  calls: ['total calls', 'total_calls', 'call_order', 'calls', 'pull_enum_call_order'],
+  resp_phn1: ['resp_phn1', 'phone1', 'phn1'],
+  resp_phn2: ['resp_phn2', 'phone2', 'phn2'],
+  day_to_call: ['day_to_call'],
+  time_to_call: ['time_to_call'],
+  phn_numbe_to_call: ['phn_numbe_to_call', 'number_to_call'],
+  call_avail: ['call_avail', 'availability_note']
+};
+
+let trackingProjectProfiles = [];
+let currentlyActiveProjectId = null;
+let currentlyActiveTabIndex = 0;
+let coreAggregatedDataset = []; 
+let globalSortingProfile = { col: 'id', dir: 'asc' };
+let runtimeFiltersState = { search: '', enum: '', location: '', status: '', supervisorReviewOnly: false };
+let transientModalTabsHolder = [];
+let traceEditingProjectId = null;
+let labelLookup = {};
+
+window.addEventListener('DOMContentLoaded', () => {
+  initializePersistentStorage();
+  renderProjectSidebarView();
+  if (trackingProjectProfiles.length > 0) {
+    activateProjectProfileContext(trackingProjectProfiles[0].id);
+  }
+});
+
+function initializePersistentStorage() {
+  try {
+    // Try v10 first (new embedded-overrides format)
+    const cachedData = localStorage.getItem('dri_cati_system_v10');
+    if (cachedData) {
+      trackingProjectProfiles = JSON.parse(cachedData);
+    } else {
+      // Migrate from v9 if present
+      const legacyData = localStorage.getItem('dri_cati_system_v9');
+      const legacyOverrides = localStorage.getItem('dri_supervisor_overrides_v9');
+      let oldOverrides = {};
+      try { if (legacyOverrides) oldOverrides = JSON.parse(legacyOverrides); } catch(e){}
+
+      if (legacyData) {
+        trackingProjectProfiles = JSON.parse(legacyData);
+        // Migrate overrides into each profile object
+        trackingProjectProfiles.forEach(profile => {
+          if (!profile.overrides) profile.overrides = {};
+          Object.keys(oldOverrides).forEach(key => {
+            // Old key format: projectId_tabIndex_respondentId
+            if (key.startsWith(profile.id + '_')) {
+              const parts = key.split('_');
+              const tabIdx = parts[parts.indexOf(profile.id.split('_').pop()) + 1] || parts[1];
+              const respId = parts.slice(2).join('_');
+              const newKey = `tab_${tabIdx}_resp_${respId}`;
+              profile.overrides[newKey] = oldOverrides[key];
+            }
+          });
+        });
+      } else {
+        trackingProjectProfiles = [
+          {
+            id: 'profile_standard_default',
+            name: 'dRi · Standard Phone Survey',
+            overrides: {},
+            tabs: [
+              { name: 'Phone Survey Stream 1', url: '', data: [] }
+            ]
+          }
+        ];
+      }
+      localStorage.setItem('dri_cati_system_v10', JSON.stringify(trackingProjectProfiles));
+    }
+    // Ensure every profile has an overrides object (safety for old imported files)
+    trackingProjectProfiles.forEach(p => { if (!p.overrides) p.overrides = {}; });
+  } catch(error) {
+    console.error("Local storage initialization failed: ", error);
+  }
+}
+
+function handleSupervisorIdentityChange() {
+  const supervisorSelect = document.getElementById('uiSupervisorIdentity');
+  const supervisorName = supervisorSelect.options[supervisorSelect.selectedIndex].text.split(' (')[0];
+  document.getElementById('kpiActiveSupervisorLabel').innerText = `${supervisorName} Performance Track`;
+  calculateSupervisorPerformanceKPIs();
+}
+
+function getLabel(listNameFallback, val) {
+    if (!val || val === 'undefined') return val || '—';
+    if (labelLookup[listNameFallback] && labelLookup[listNameFallback][val]) {
+        return labelLookup[listNameFallback][val];
+    }
+    for (let list in labelLookup) {
+        if (labelLookup[list][val]) return labelLookup[list][val];
+    }
+    return val;
+}
+
+function renderProjectSidebarView() {
+  const container = document.getElementById('projectDOMList');
+  container.innerHTML = '';
+  
+  trackingProjectProfiles.forEach(p => {
+    const itemEl = document.createElement('div');
+    itemEl.className = `project-item ${p.id === currentlyActiveProjectId ? 'active' : ''}`;
+    itemEl.setAttribute('data-name', p.name);
+    itemEl.onclick = () => activateProjectProfileContext(p.id);
+    
+    itemEl.innerHTML = `
+      <div class="project-status-dot"></div>
+      <div class="project-name" title="${escapeHtmlString(p.name)}">${escapeHtmlString(p.name)}</div>
+      <div class="project-actions">
+        <button class="action-icon-btn" onclick="event.stopPropagation(); triggerEditProjectModal('${p.id}')" title="Modify Project"><span class="material-icons-round">edit</span></button>
+        <button class="action-icon-btn" style="color:#EF4444;" onclick="event.stopPropagation(); executeProjectPurge('${p.id}')" title="Delete Portfolio"><span class="material-icons-round">delete_forever</span></button>
+      </div>
+    `;
+    container.appendChild(itemEl);
+  });
+}
+
+function activateProjectProfileContext(projectId) {
+  currentlyActiveProjectId = projectId;
+  currentlyActiveTabIndex = 0;
+  renderProjectSidebarView();
+  
+  const match = trackingProjectProfiles.find(p => p.id === projectId);
+  if (!match) return;
+  
+  document.getElementById('activeProjectHeadline').innerText = match.name;
+  renderProjectFormTabsRow();
+  processActiveDataStream();
+}
+
+function renderProjectFormTabsRow() {
+  const container = document.getElementById('projectFormTabsContainer');
+  container.innerHTML = '';
+  const activeProfile = trackingProjectProfiles.find(p => p.id === currentlyActiveProjectId);
+  if (!activeProfile || !activeProfile.tabs) return;
+  
+  activeProfile.tabs.forEach((tab, index) => {
+    const tabItemEl = document.createElement('div');
+    tabItemEl.className = `tab-item ${index === currentlyActiveTabIndex ? 'active' : ''}`;
+    tabItemEl.innerText = tab.name;
+    tabItemEl.onclick = () => {
+      currentlyActiveTabIndex = index;
+      renderProjectFormTabsRow();
+      processActiveDataStream();
+    };
+    container.appendChild(tabItemEl);
+  });
+}
+
+function triggerAddProjectModal() {
+  traceEditingProjectId = null;
+  document.getElementById('configModalTitle').innerHTML = '<span class="material-icons-round">add_box</span> Register Survey Portfolio';
+  document.getElementById('cfgProjectNameInput').value = "";
+  document.getElementById('cfgTabTitleInput').value = "";
+  document.getElementById('cfgTabUrlInput').value = "";
+  document.getElementById('cfgTabOverridesUrlInput').value = "";
+  document.getElementById('cfgTabApiUrlInput').value = "";
+  transientModalTabsHolder = [];
+  renderModalTabMappingRows();
+  launchModalWindow('projectConfigDialog');
+}
+
+function triggerEditProjectModal(projectId) {
+  traceEditingProjectId = projectId;
+  const match = trackingProjectProfiles.find(p => p.id === projectId);
+  if (!match) return;
+  
+  document.getElementById('configModalTitle').innerHTML = '<span class="material-icons-round">edit_note</span> Edit Matrix Mapping';
+  document.getElementById('cfgProjectNameInput').value = match.name;
+  document.getElementById('cfgTabTitleInput').value = "";
+  document.getElementById('cfgTabUrlInput').value = "";
+  document.getElementById('cfgTabOverridesUrlInput').value = "";
+  document.getElementById('cfgTabApiUrlInput').value = "";
+  transientModalTabsHolder = JSON.parse(JSON.stringify(match.tabs || []));
+  renderModalTabMappingRows();
+  launchModalWindow('projectConfigDialog');
+}
+
+function appendFormTabConfigRow() {
+  const labelInput = document.getElementById('cfgTabTitleInput');
+  const urlInput = document.getElementById('cfgTabUrlInput');
+  const overridesUrlInput = document.getElementById('cfgTabOverridesUrlInput');
+  const apiInput = document.getElementById('cfgTabApiUrlInput');
+  if (!labelInput.value.trim()) return alert('Please provide a tab label.');
+  
+  // Validate Apps Script URL format
+  const apiUrlVal = apiInput.value.trim();
+  if (apiUrlVal && apiUrlVal.includes('/macros/library/d/')) {
+    alert('⚠️ Invalid Apps Script URL\n\nThe URL you entered is a Library URL, not a Web App URL.\n\nA valid Web App URL looks like:\nhttps://script.google.com/macros/s/AKfy.../exec\n\nTo get the correct URL:\n1. Open Apps Script → Deploy → Manage Deployments\n2. Copy the Web App URL (contains "/macros/s/" and ends in "/exec")\n\nPlease re-enter the correct URL.');
+    return;
+  }
+  if (apiUrlVal && !apiUrlVal.includes('/macros/s/')) {
+    const proceed = confirm('⚠️ The Apps Script URL does not look like a standard Web App URL.\n\nA valid URL contains "/macros/s/" and ends in "/exec".\n\nDo you want to continue anyway?');
+    if (!proceed) return;
+  }
+  
+  const mainUrlVal = urlInput.value.trim();
+  const overridesUrlVal = overridesUrlInput.value.trim();
+
+  // Warn if both URLs are identical — common copy-paste mistake
+  if (mainUrlVal && overridesUrlVal && mainUrlVal === overridesUrlVal) {
+    alert('⚠️ Warning: Main CSV URL and Overrides CSV URL are identical.\n\nThey must point to different published tabs on your Google Sheet:\n• Main CSV → your survey data tab\n• Overrides CSV → the "Supervisor_Overrides" tab\n\nPlease check the URLs before continuing.');
+    return;
+  }
+
+  transientModalTabsHolder.push({
+    name: labelInput.value.trim(),
+    url: urlInput.value.trim(),
+    overridesUrl: overridesUrlInput.value.trim(),
+    apiUrl: apiInput.value.trim(),
+    data: [],
+    overridesData: []
+  });
+  
+  labelInput.value = "";
+  urlInput.value = "";
+  overridesUrlInput.value = "";
+  apiInput.value = "";
+  renderModalTabMappingRows();
+}
+
+function removeTabConfigRowIndex(index) {
+  transientModalTabsHolder.splice(index, 1);
+  renderModalTabMappingRows();
+}
+
+function renderModalTabMappingRows() {
+  const container = document.getElementById('cfgTabMappingContainer');
+  if (transientModalTabsHolder.length === 0) {
+    container.innerHTML = `<div style="font-size:12.5px; color:var(--text-light); text-align:center; padding:12px;">No tabs configured yet. Fill in the fields above and click + Add Tab.</div>`;
+    return;
+  }
+  container.innerHTML = transientModalTabsHolder.map((tab, idx) => `
+    <div style="font-size:12px; padding:10px 6px; border-bottom:1px solid var(--border-color); display:flex; flex-direction:column; gap:4px;">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <strong style="font-size:13px;">${escapeHtmlString(tab.name)}</strong>
+        <button class="action-icon-btn" style="color:var(--dri-red); font-weight:700; font-size:12px;" onclick="removeTabConfigRowIndex(${idx})">&times; Remove</button>
+      </div>
+      <div style="color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+        📊 CSV: ${escapeHtmlString(tab.url || 'No URL — will use local file upload')}
+      </div>
+      <div style="color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+        🔒 Overrides CSV: ${escapeHtmlString(tab.overridesUrl || 'Not set — supervisor data will not sync across devices')}
+      </div>
+      <div style="color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+        ⚡ Apps Script: ${escapeHtmlString(tab.apiUrl || 'Not set — supervisor actions will only save locally')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function commitProjectConfigurationProfile() {
+  const nameVal = document.getElementById('cfgProjectNameInput').value.trim();
+  if (!nameVal) return alert('Portfolio Name cannot be empty.');
+
+  if (traceEditingProjectId) {
+    const profile = trackingProjectProfiles.find(p => p.id === traceEditingProjectId);
+    if (profile) {
+      profile.name = nameVal;
+      profile.tabs = transientModalTabsHolder;
+    }
+  } else {
+    const nextProfile = {
+      id: 'profile_' + Date.now(),
+      name: nameVal,
+      overrides: {},
+      tabs: transientModalTabsHolder
+    };
+    trackingProjectProfiles.push(nextProfile);
+    currentlyActiveProjectId = nextProfile.id;
+    currentlyActiveTabIndex = 0;
+  }
+  
+  localStorage.setItem('dri_cati_system_v10', JSON.stringify(trackingProjectProfiles));
+  dismissModalWindow('projectConfigDialog');
+  renderProjectSidebarView();
+  if (currentlyActiveProjectId) activateProjectProfileContext(currentlyActiveProjectId);
+}
+
+function executeProjectPurge(projectId) {
+  if (!confirm("Remove this tracking profile configuration permanently?")) return;
+  trackingProjectProfiles = trackingProjectProfiles.filter(p => p.id !== projectId);
+  localStorage.setItem('dri_cati_system_v10', JSON.stringify(trackingProjectProfiles));
+  renderProjectSidebarView();
+  
+  if (trackingProjectProfiles.length > 0) {
+    activateProjectProfileContext(trackingProjectProfiles[0].id);
+  } else {
+    currentlyActiveProjectId = null;
+    document.getElementById('activeProjectHeadline').innerText = "No Tracking Stream Maps Registered";
+    document.getElementById('projectFormTabsContainer').innerHTML = '';
+    coreAggregatedDataset = [];
+    renderPrimaryGridUIBody();
+  }
+}
+
+async function synchronizeProjectDataStream() {
+  const activeProfile = trackingProjectProfiles.find(p => p.id === currentlyActiveProjectId);
+  if (!activeProfile || !activeProfile.tabs || !activeProfile.tabs[currentlyActiveTabIndex]) return;
+  const workingTab = activeProfile.tabs[currentlyActiveTabIndex];
+  
+  // Ensure legacy tabs get the new fields
+  if (!workingTab.overridesUrl) workingTab.overridesUrl = '';
+  if (!workingTab.apiUrl) workingTab.apiUrl = '';
+  if (!workingTab.overridesData) workingTab.overridesData = [];
+
+  if (!workingTab.url) {
+    const hiddenUploader = document.createElement('input');
+    hiddenUploader.type = 'file';
+    hiddenUploader.accept = '.csv';
+    hiddenUploader.onchange = ev => {
+      const targetFile = ev.target.files[0];
+      if (!targetFile) return;
+      const fileReader = new FileReader();
+      fileReader.onload = fileEv => {
+        workingTab.data = parseRobustCSVMatrixStream(fileEv.target.result);
+        localStorage.setItem('dri_cati_system_v10', JSON.stringify(trackingProjectProfiles));
+        recordLastSyncTime();
+        processActiveDataStream();
+      };
+      fileReader.readAsText(targetFile);
+    };
+    hiddenUploader.click();
+    return;
+  }
+
+  const statusEl = document.getElementById('syncStatusFeedback');
+  statusEl.innerHTML = `<span class="material-icons-round" style="animation:spin 1s linear infinite;">sync</span> Syncing data streams...`;
+
+  // Google Sheets published CSVs block direct fetch() due to CORS.
+  // We try the direct URL first (works when served from a real domain / browser extension),
+  // then fall back to a public CORS proxy so localhost users are also covered.
+  async function fetchCsvText(url) {
+    // Strategy 1: direct (works on deployed domains that are whitelisted by Google)
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (r.ok) {
+        const text = await r.text();
+        // A CORS-blocked response sometimes arrives as opaque (no body). Guard against that.
+        if (text && text.trim().length > 0) return text;
+      }
+    } catch(e) { /* fall through to proxy */ }
+
+    // Strategy 2: corsproxy.io  (free, no-key proxy for public URLs)
+    const proxy1 = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    try {
+      const r = await fetch(proxy1, { signal: AbortSignal.timeout(12000) });
+      if (r.ok) return await r.text();
+    } catch(e) { /* fall through */ }
+
+    // Strategy 3: allorigins.win  (another reliable fallback)
+    const proxy2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    const r = await fetch(proxy2, { signal: AbortSignal.timeout(12000) });
+    if (!r.ok) throw new Error(`All fetch strategies failed for: ${url}`);
+    return await r.text();
+  }
+
+  try {
+    // Fetch main survey CSV
+    const mainText = await fetchCsvText(workingTab.url);
+    workingTab.data = parseRobustCSVMatrixStream(mainText);
+
+    // Fetch overrides CSV if configured
+    if (workingTab.overridesUrl) {
+      try {
+        const ovText = await fetchCsvText(workingTab.overridesUrl);
+        workingTab.overridesData = parseRobustCSVMatrixStream(ovText);
+      } catch(ovErr) {
+        console.warn("Overrides CSV fetch failed (non-fatal):", ovErr);
+        statusEl.innerHTML = `<span class="material-icons-round" style="color:#F59E0B;">warning</span> Main CSV synced — overrides fetch failed`;
+      }
+    }
+
+    localStorage.setItem('dri_cati_system_v10', JSON.stringify(trackingProjectProfiles));
+    statusEl.innerHTML = `<span class="material-icons-round" style="color:#10B981;">cloud_done</span> Synced`;
+    recordLastSyncTime();
+    processActiveDataStream();
+  } catch(error) {
+    console.error(error);
+    statusEl.innerHTML = `<span class="material-icons-round" style="color:#EF4444;">error_outline</span> Sync Error`;
+    // NOTE: do NOT wipe workingTab.url — that would permanently erase the configured URL
+    alert("Live sync failed.\n\nCommon causes:\n• CSV URL is not published publicly (File → Share → Publish to web)\n• Network / firewall is blocking the request\n\nYour configured URL has been preserved. Check the browser console (F12) for details.");
+  }
+}
+
+let lastSyncTimestamp = null;
+let syncTickerInterval = null;
+
+function recordLastSyncTime() {
+  lastSyncTimestamp = new Date();
+  const timerEl = document.getElementById('lastSyncTimer');
+  timerEl.style.display = 'flex';
+  updateSyncTimerText();
+  if (syncTickerInterval) clearInterval(syncTickerInterval);
+  syncTickerInterval = setInterval(updateSyncTimerText, 30000);
+}
+
+function updateSyncTimerText() {
+  if (!lastSyncTimestamp) return;
+  const now = new Date();
+  const diffMs = now - lastSyncTimestamp;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffSecs = Math.floor((diffMs % 60000) / 1000);
+  let label;
+  if (diffMins === 0) {
+    label = diffSecs < 10 ? 'Just synced' : `${diffSecs}s ago`;
+  } else if (diffMins < 60) {
+    label = `Last sync: ${diffMins}m ago`;
+  } else {
+    const h = Math.floor(diffMins / 60);
+    const m = diffMins % 60;
+    label = `Last sync: ${h}h ${m}m ago`;
+  }
+  const timeStr = lastSyncTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('lastSyncTimerText').textContent = `${label} (${timeStr})`;
+}
+
+function parseRobustCSVMatrixStream(streamText) {
+  const outputRecords = [];
+  let currentFieldTokens = [];
+  let runningBuffer = "";
+  let insideQuoteBlock = false;
+  
+  for (let pointer = 0; pointer < streamText.length; pointer++) {
+    const symbol = streamText[pointer];
+    const peekSymbol = streamText[pointer + 1];
+    
+    if (insideQuoteBlock) {
+      if (symbol === '"') {
+        if (peekSymbol === '"') { runningBuffer += '"'; pointer++; } 
+        else { insideQuoteBlock = false; }
+      } else { runningBuffer += symbol; }
+    } else {
+      if (symbol === '"') { insideQuoteBlock = true; }
+      else if (symbol === ',') { currentFieldTokens.push(runningBuffer); runningBuffer = ""; }
+      else if (symbol === '\r' || symbol === '\n') {
+        currentFieldTokens.push(runningBuffer); runningBuffer = "";
+        if (symbol === '\r' && peekSymbol === '\n') { pointer++; }
+        if (currentFieldTokens.length > 0 && currentFieldTokens.some(cell => cell !== "")) {
+          outputRecords.push(currentFieldTokens);
+        }
+        currentFieldTokens = [];
+      } else { runningBuffer += symbol; }
+    }
+  }
+  if (runningBuffer || currentFieldTokens.length > 0) {
+    currentFieldTokens.push(runningBuffer);
+    if (currentFieldTokens.some(cell => cell !== "")) outputRecords.push(currentFieldTokens);
+  }
+  return outputRecords;
+}
+
+function runHeaderDiscoveryIndicesMapping(headerRowArray) {
+  const extractionMatrix = {};
+  if (!headerRowArray) return extractionMatrix;
+  
+  const normalized = headerRowArray.map(str => String(str).toLowerCase().trim());
+  
+  Object.keys(INTEGRATED_COLUMN_HEADERS).forEach(schemaKey => {
+    extractionMatrix[schemaKey] = -1;
+    const lookupRules = INTEGRATED_COLUMN_HEADERS[schemaKey];
+    
+    for (let candidate of lookupRules) {
+      const foundIdx = normalized.indexOf(candidate);
+      if (foundIdx !== -1) {
+        extractionMatrix[schemaKey] = foundIdx;
+        break;
+      }
+    }
+    if (extractionMatrix[schemaKey] === -1) {
+      extractionMatrix[schemaKey] = normalized.findIndex(hItem => 
+        lookupRules.some(rKey => hItem.includes(rKey))
+      );
+    }
+  });
+
+  extractionMatrix.timestamp = normalized.findIndex(h => h.includes('submission') || h.includes('time') || h.includes('date') || h.includes('start'));
+  return extractionMatrix;
+}
+
+function convertValueCodeToReadableLabel(valueString, translationDictionary) {
+  const normKey = String(valueString).trim();
+  return translationDictionary[normKey] ? translationDictionary[normKey] : valueString;
+}
+
+function extractDateTimeFields(rawString) {
+  if (!rawString || rawString === 'undefined' || rawString.trim() === '') return { date: '—', time: '—' };
+  let d = String(rawString).trim();
+  
+  if (d.includes('T')) {
+    let parts = d.split('T');
+    let datePart = parts[0];
+    let timePart = parts[1].split('.')[0].split('+')[0].split('Z')[0];
+    return { date: datePart, time: timePart };
+  }
+  if (d.includes(' ')) {
+    let parts = d.split(' ');
+    return { date: parts[0], time: parts.slice(1).join(' ') };
+  }
+  return { date: d, time: '—' };
+}
+
+function executeSupervisorAuthorizationOverride(respondentId) {
+  const activeProfile = trackingProjectProfiles.find(p => p.id === currentlyActiveProjectId);
+  if (!activeProfile) return;
+  if (!activeProfile.overrides) activeProfile.overrides = {};
+
+  const workingTab       = activeProfile.tabs && activeProfile.tabs[currentlyActiveTabIndex];
+  const activeSupervisor = document.getElementById('uiSupervisorIdentity').value;
+  const supervisorLabel  = document.getElementById('uiSupervisorIdentity').options[document.getElementById('uiSupervisorIdentity').selectedIndex].text.split(' (')[0];
+  const standardSystemPin = SUPERVISOR_AUTHENTICATION_DB[activeSupervisor];
+  
+  const insertedPinValue = prompt(`[PIN REQUIRED]\nEnter PIN for ${supervisorLabel}:`);
+  if (insertedPinValue === null) return;
+  
+  if (insertedPinValue !== standardSystemPin) {
+    alert("Incorrect PIN. Action cancelled.");
+    return;
+  }
+
+  const reasonOverride = prompt(`Unlock Respondent [ ${respondentId} ]\nEnter a brief reason or note for unlocking this case:`);
+  if (reasonOverride === null) return;
+  if (!reasonOverride.trim()) {
+    alert("A reason is required. Action cancelled.");
+    return;
+  }
+  
+  const overrideKey = `tab_${currentlyActiveTabIndex}_resp_${respondentId}`;
+  const overrideRecord = {
+    authorizedBy:    activeSupervisor,
+    supervisorLabel: supervisorLabel,
+    timestamp:       new Date().toISOString(),
+    auditNote:       reasonOverride.trim()
+  };
+
+  // 1 — Optimistic local cache: update UI immediately for the acting supervisor
+  activeProfile.overrides[overrideKey] = overrideRecord;
+  localStorage.setItem('dri_cati_system_v10', JSON.stringify(trackingProjectProfiles));
+  processActiveDataStream();
+
+  // 2 — Write to Google Sheet via Apps Script (async, non-blocking)
+  if (workingTab && workingTab.apiUrl) {
+    // Validate it's a proper Web App exec URL before trying to call it
+    if (workingTab.apiUrl.includes('/macros/library/d/')) {
+      alert('⚠️ Apps Script URL Error\n\nThe configured Apps Script URL is a Library URL, not a Web App URL.\n\nPlease go to Edit Project and replace it with your deployed Web App URL (it should contain "/macros/s/" and end in "/exec").\n\nThe override has been saved locally only.');
+      return;
+    }
+    const payload = {
+      respondentId:   respondentId,
+      tabIndex:       String(currentlyActiveTabIndex),
+      supervisorId:   activeSupervisor,
+      supervisorName: supervisorLabel,
+      action:         'Unlock',
+      auditNote:      reasonOverride.trim()
+    };
+
+    fetch(workingTab.apiUrl, {
+      method:  'POST',
+      mode:    'no-cors',   // Apps Script deployed as web app requires no-cors from external origins
+      headers: { 'Content-Type': 'text/plain' },
+      body:    JSON.stringify(payload)
+    }).then(() => {
+      console.log(`Override for ${respondentId} submitted to sheet.`);
+    }).catch(err => {
+      console.warn("Sheet write failed (local cache still active):", err);
+    });
+
+    alert(`✅ Case [ ${respondentId} ] unlocked.\nSaved locally and submitted to the shared Google Sheet.\nOthers will see this on their next Synchronize.`);
+  } else {
+    alert(`✅ Case [ ${respondentId} ] unlocked (saved locally).\n⚠️ No Apps Script URL configured — this will not sync automatically to other devices.\nAdd an Apps Script URL in project settings to enable live sharing.`);
+  }
+}
+
+// Parse the Supervisor_Overrides CSV (fetched from Google Sheets) into the same
+// key format used by local overrides: { "tab_N_resp_ID": { authorizedBy, supervisorLabel, timestamp, auditNote } }
+// The sheet is expected to have these columns (order detected by header):
+//   timestamp | resp_id | tab_index | supervisor_id | supervisor_name | action | audit_note
+function buildOverridesMapFromSheet(parsedRows) {
+  const result = {};
+  if (!parsedRows || parsedRows.length < 2) return result;
+
+  const headers = parsedRows[0].map(h => String(h).toLowerCase().trim());
+  const col = name => headers.indexOf(name);
+
+  const iTimestamp    = col('timestamp');
+  const iRespId       = col('resp_id');
+  const iTabIndex     = col('tab_index');
+  const iSupervisorId = col('supervisor_id');
+  const iSupName      = col('supervisor_name');
+  const iAuditNote    = col('audit_note');
+
+  for (let i = 1; i < parsedRows.length; i++) {
+    const row = parsedRows[i];
+    if (!row || row.length === 0) continue;
+
+    const respId   = iRespId   >= 0 ? String(row[iRespId]).trim()   : '';
+    const tabIdx   = iTabIndex >= 0 ? String(row[iTabIndex]).trim()  : '0';
+    if (!respId) continue;
+
+    const key = `tab_${tabIdx}_resp_${respId}`;
+    const ts  = iTimestamp >= 0 ? String(row[iTimestamp]).trim() : '';
+
+    // Keep only the most recent override per respondent (later rows win)
+    const existing = result[key];
+    if (!existing || ts > existing.timestamp) {
+      result[key] = {
+        authorizedBy:    iSupervisorId >= 0 ? String(row[iSupervisorId]).trim() : '',
+        supervisorLabel: iSupName      >= 0 ? String(row[iSupName]).trim()      : '',
+        timestamp:       ts,
+        auditNote:       iAuditNote    >= 0 ? String(row[iAuditNote]).trim()    : ''
+      };
+    }
+  }
+  return result;
+}
+
+function processActiveDataStream() {
+  const activeProfile = trackingProjectProfiles.find(p => p.id === currentlyActiveProjectId);
+  if (!activeProfile || !activeProfile.tabs || !activeProfile.tabs[currentlyActiveTabIndex]) return;
+  
+  const contextTab = activeProfile.tabs[currentlyActiveTabIndex];
+  const entries = contextTab.data || [];
+  
+  if (entries.length <= 1) {
+    coreAggregatedDataset = [];
+    populateFilterInterfaceControls();
+    renderPrimaryGridUIBody();
+    calculateSupervisorPerformanceKPIs();
+    return;
+  }
+  
+  const headers = entries[0];
+  const computedSchemaMap = runHeaderDiscoveryIndicesMapping(headers);
+  const groupsTraceMap = {};
+  
+  for (let idx = 1; idx < entries.length; idx++) {
+    const rowData = entries[idx];
+    if (!rowData || rowData.length === 0) continue;
+    
+    const idValue = computedSchemaMap.id !== -1 ? String(rowData[computedSchemaMap.id]).trim() : '';
+    if (!idValue || idValue === '' || idValue === 'undefined') continue;
+    
+    const extractionName = computedSchemaMap.name !== -1 ? String(rowData[computedSchemaMap.name]).trim() : '';
+    const extractionLocation = computedSchemaMap.location !== -1 ? String(rowData[computedSchemaMap.location]).trim() : '';
+    const extractionEnumerator = computedSchemaMap.enumerator !== -1 ? String(rowData[computedSchemaMap.enumerator]).trim() : '';
+    const rawStatus = computedSchemaMap.status !== -1 ? String(rowData[computedSchemaMap.status]).trim() : '';
+    const rawConsent = computedSchemaMap.consent !== -1 ? String(rowData[computedSchemaMap.consent]).trim() : '';
+    const extractionReason = computedSchemaMap.reason !== -1 ? String(rowData[computedSchemaMap.reason]).trim() : '';
+    const dialIndexOrder = computedSchemaMap.calls !== -1 ? String(rowData[computedSchemaMap.calls]).trim() : '1';
+    const rowTimestamp = computedSchemaMap.timestamp !== -1 ? String(rowData[computedSchemaMap.timestamp]).trim() : String(idx);
+    
+    const respPhn1 = computedSchemaMap.resp_phn1 !== -1 ? String(rowData[computedSchemaMap.resp_phn1]).trim() : '—';
+    const respPhn2 = computedSchemaMap.resp_phn2 !== -1 ? String(rowData[computedSchemaMap.resp_phn2]).trim() : '—';
+    const dayToCall = computedSchemaMap.day_to_call !== -1 ? String(rowData[computedSchemaMap.day_to_call]).trim() : '—';
+    const timeToCall = computedSchemaMap.time_to_call !== -1 ? String(rowData[computedSchemaMap.time_to_call]).trim() : '—';
+    const phnNumbeToCall = computedSchemaMap.phn_numbe_to_call !== -1 ? String(rowData[computedSchemaMap.phn_numbe_to_call]).trim() : '—';
+    const callAvail = computedSchemaMap.call_avail !== -1 ? String(rowData[computedSchemaMap.call_avail]).trim() : '—';
+
+    let cleanStatusLabel = convertValueCodeToReadableLabel(rawStatus, STATUS_VALUE_MAPPING);
+    let cleanConsentLabel = convertValueCodeToReadableLabel(rawConsent, CONSENT_VALUE_MAPPING);
+
+    if (!groupsTraceMap[idValue]) {
+      groupsTraceMap[idValue] = [];
+    }
+    
+    groupsTraceMap[idValue].push({
+      id: idValue,
+      name: extractionName,
+      location: extractionLocation,
+      enumerator: extractionEnumerator,
+      status: cleanStatusLabel,
+      consent: cleanConsentLabel,
+      reason: extractionReason,
+      rawConsentVal: rawConsent,
+      rawStatusVal: rawStatus,
+      calls: dialIndexOrder,
+      timestamp: rowTimestamp,
+      absoluteIndex: idx,
+      resp_phn1: respPhn1,
+      resp_phn2: respPhn2,
+      day_to_call: dayToCall,
+      time_to_call: timeToCall,
+      phn_numbe_to_call: phnNumbeToCall,
+      call_avail: callAvail
+    });
+  }
+  
+  coreAggregatedDataset = [];
+  
+  // Build overrides lookup from the fetched Supervisor_Overrides sheet CSV
+  // Also fall back to profile.overrides (local cache for offline/immediate actions)
+  const sheetOverrides = buildOverridesMapFromSheet(contextTab.overridesData || []);
+  const localOverrides  = activeProfile.overrides || {};
+
+  // Merge: sheet data wins for shared state; local cache fills in actions not yet synced
+  const mergedOverrides = Object.assign({}, localOverrides, sheetOverrides);
+
+  Object.keys(groupsTraceMap).forEach(keyID => {
+    const completeTraceStack = groupsTraceMap[keyID];
+    
+    completeTraceStack.sort((alpha, beta) => {
+      const timeAlpha = new Date(alpha.timestamp).getTime() || alpha.absoluteIndex;
+      const timeBeta = new Date(beta.timestamp).getTime() || beta.absoluteIndex;
+      return timeAlpha - timeBeta;
+    });
+    
+    // Key is now tab-scoped, living inside the project profile
+    const overrideKey = `tab_${currentlyActiveTabIndex}_resp_${keyID}`;
+    const matchedOverride = mergedOverrides[overrideKey];
+    
+    // Check if this respondent ever refused
+    const hasRefusal = completeTraceStack.some(h => String(h.rawConsentVal) === '0');
+
+    let finalResolutionStateObject = JSON.parse(JSON.stringify(completeTraceStack[completeTraceStack.length - 1]));
+    
+    if (matchedOverride && hasRefusal) {
+      finalResolutionStateObject.isSupervisorUnlockedOverride = true;
+      finalResolutionStateObject.supervisorOverrideData = matchedOverride;
+      
+      // SUCCESS CHECK: Is the latest entry a successful agreed submission?
+      // Use both raw values and decoded labels for resilience across CSV formats
+      const latestConsentRaw = String(finalResolutionStateObject.rawConsentVal).trim();
+      const latestStatusRaw  = String(finalResolutionStateObject.rawStatusVal).trim();
+      const latestConsentLabel = String(finalResolutionStateObject.consent);
+      const latestStatusLabel  = String(finalResolutionStateObject.status);
+
+      const isSuccessfulEntry =
+        (latestConsentRaw === '1' || latestConsentLabel.toLowerCase().includes('agree')) &&
+        (latestStatusRaw  === '1' || latestStatusLabel.toLowerCase().includes('available'));
+
+      if (isSuccessfulEntry) {
+        // Confirmed conversion: refusal existed, supervisor unlocked, enumerator got agreement
+        finalResolutionStateObject.isBypassConvertedSuccess = true;
+      } else {
+        finalResolutionStateObject.isBypassConvertedSuccess = false;
+        finalResolutionStateObject.status  = "Pending Re-attempt (Unlocked)";
+        finalResolutionStateObject.consent = "Overridden / Reset";
+      }
+    } else {
+      finalResolutionStateObject.isSupervisorUnlockedOverride = false;
+      finalResolutionStateObject.isBypassConvertedSuccess = false;
+    }
+    
+    finalResolutionStateObject.completeHistoryCallSequence = completeTraceStack;
+    finalResolutionStateObject.historyCount = completeTraceStack.length;
+    finalResolutionStateObject.visualCategoryKey = resolveVisualColorClass(
+      finalResolutionStateObject.status,
+      finalResolutionStateObject.consent,
+      (finalResolutionStateObject.isSupervisorUnlockedOverride && !finalResolutionStateObject.isBypassConvertedSuccess)
+    );
+    
+    coreAggregatedDataset.push(finalResolutionStateObject);
+  });
+  
+  populateFilterInterfaceControls();
+  renderPrimaryGridUIBody();
+  calculateSupervisorPerformanceKPIs();
+}
+
+function resolveVisualColorClass(status, consent, isOverridePending) {
+  if (isOverridePending) return 'warning';
+  const sLow = String(status).toLowerCase();
+  const cLow = String(consent).toLowerCase();
+  
+  if (sLow.includes('available') && (cLow.includes('agree') || cLow.includes('yes') || cLow.includes('হ্যাঁ'))) return 'success';
+  if (sLow.includes('recruit') || sLow.includes('complete') || cLow.includes('agree')) return 'success';
+  if (sLow.includes('wrong') || sLow.includes('ভুল') || cLow.includes('refuse') || cLow.includes('no') || cLow.includes('না')) return 'danger';
+  
+  return 'warning';
+}
+
+function calculateSupervisorPerformanceKPIs() {
+  const activeProfile = trackingProjectProfiles.find(p => p.id === currentlyActiveProjectId);
+  const workingTab = activeProfile && activeProfile.tabs && activeProfile.tabs[currentlyActiveTabIndex];
+  const sheetOverrides = workingTab ? buildOverridesMapFromSheet(workingTab.overridesData || []) : {};
+  const localOverrides  = (activeProfile && activeProfile.overrides) ? activeProfile.overrides : {};
+  const mergedOverrides = Object.assign({}, localOverrides, sheetOverrides);
+
+  const activeSupervisor = document.getElementById('uiSupervisorIdentity').value;
+  
+  let globalRefusalsCount = 0;
+  let supervisorTotalUnlockedActions = 0;
+  let successfulConversionsCount = 0;
+  
+  coreAggregatedDataset.forEach(record => {
+    const overrideKey = `tab_${currentlyActiveTabIndex}_resp_${record.id}`;
+    const matchedOverride = mergedOverrides[overrideKey];
+    
+    const hasInitialRefusal = record.completeHistoryCallSequence.some(h => String(h.rawConsentVal) === '0');
+    if (hasInitialRefusal) globalRefusalsCount++;
+    
+    if (matchedOverride && matchedOverride.authorizedBy === activeSupervisor) {
+      supervisorTotalUnlockedActions++;
+      if (record.isBypassConvertedSuccess) successfulConversionsCount++;
+    }
+  });
+  
+  const rate = supervisorTotalUnlockedActions > 0
+    ? ((successfulConversionsCount / supervisorTotalUnlockedActions) * 100).toFixed(1) + '%'
+    : '0.0%';
+    
+  document.getElementById('kpiTotalRefusals').innerText = globalRefusalsCount;
+  document.getElementById('kpiTotalUnlocked').innerText = supervisorTotalUnlockedActions;
+  document.getElementById('kpiSuccessfulConversions').innerText = successfulConversionsCount;
+  document.getElementById('kpiConversionSuccessRate').innerText = rate;
+}
+
+function populateFilterInterfaceControls() {
+  const setEnum = new Set();
+  const setLocation = new Set();
+  const setStatus = new Set();
+  
+  coreAggregatedDataset.forEach(r => {
+    if (r.enumerator) setEnum.add(getLabel('enum', r.enumerator));
+    if (r.location) setLocation.add(r.location);
+    if (r.status) setStatus.add(r.status);
+  });
+  
+  rebuildFilterDropdown('uiFilterEnumerator', setEnum, 'All Enumerators');
+  rebuildFilterDropdown('uiFilterLocation', setLocation, 'All Locations / Categories');
+  rebuildFilterDropdown('uiFilterResolutionStatus', setStatus, 'All Final Statuses');
+}
+
+function rebuildFilterDropdown(domID, valuesSet, fallbackText) {
+  const el = document.getElementById(domID);
+  const cache = el.value;
+  el.innerHTML = `<option value="">${fallbackText}</option>`;
+  [...valuesSet].sort().forEach(val => {
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.innerText = val;
+    if (val === cache) opt.selected = true;
+    el.appendChild(opt);
+  });
+}
+
+function executeDataFiltering() {
+  runtimeFiltersState.search = document.getElementById('uiFilterSearch').value.toLowerCase().trim();
+  runtimeFiltersState.enum = document.getElementById('uiFilterEnumerator').value;
+  runtimeFiltersState.location = document.getElementById('uiFilterLocation').value;
+  runtimeFiltersState.status = document.getElementById('uiFilterResolutionStatus').value;
+  runtimeFiltersState.supervisorReviewOnly = document.getElementById('uiFilterSupervisorReviewOnly').checked;
+  renderPrimaryGridUIBody();
+}
+
+function toggleGridSort(columnKey) {
+  if (globalSortingProfile.col === columnKey) {
+    globalSortingProfile.dir = globalSortingProfile.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    globalSortingProfile.col = columnKey;
+    globalSortingProfile.dir = 'asc';
+  }
+  renderPrimaryGridUIBody();
+}
+
+function renderPrimaryGridUIBody() {
+  const tbody = document.getElementById('trackingTableBodyRowContainer');
+  tbody.innerHTML = '';
+  
+  let datasetView = coreAggregatedDataset.filter(item => {
+    if (runtimeFiltersState.supervisorReviewOnly) {
+      const isRefusedLocked = (String(item.rawConsentVal) === '0' && !item.isSupervisorUnlockedOverride);
+      if (!isRefusedLocked) return false;
+    }
+    
+    if (runtimeFiltersState.search && !item.id.toLowerCase().includes(runtimeFiltersState.search) && !item.name.toLowerCase().includes(runtimeFiltersState.search)) return false;
+    if (runtimeFiltersState.enum && getLabel('enum', item.enumerator) !== runtimeFiltersState.enum) return false;
+    if (runtimeFiltersState.location && item.location !== runtimeFiltersState.location) return false;
+    if (runtimeFiltersState.status && item.status !== runtimeFiltersState.status) return false;
+    return true;
+  });
+  
+  const sortCol = globalSortingProfile.col;
+  const directionMultiplier = globalSortingProfile.dir === 'asc' ? 1 : -1;
+  
+  datasetView.sort((alpha, beta) => {
+    let lookupValA = alpha[sortCol];
+    let lookupValB = beta[sortCol];
+    
+    if (typeof lookupValA === 'number' && typeof lookupValB === 'number') {
+      return (lookupValA - lookupValB) * directionMultiplier;
+    }
+    
+    return String(lookupValA || '').toLowerCase().localeCompare(String(lookupValB || '').toLowerCase()) * directionMultiplier;
+  });
+  
+  calculateSummaryTileCounters(datasetView);
+  
+  document.getElementById('uiFilterCounterOutput').innerText = `Displaying ${datasetView.length} unique records tracked`;
+  
+  if (datasetView.length === 0) {
+    document.getElementById('emptyGridPlaceholder').style.display = 'block';
+    return;
+  }
+  document.getElementById('emptyGridPlaceholder').style.display = 'none';
+  
+  datasetView.forEach(record => {
+    const rowElement = document.createElement('tr');
+    rowElement.className = "interactive-table-row";
+    
+    let statusIconName = "help_outline";
+    if (record.visualCategoryKey === 'success') statusIconName = "check_circle";
+    if (record.visualCategoryKey === 'danger') statusIconName = "cancel";
+    if (record.visualCategoryKey === 'warning') statusIconName = "error";
+
+    const extractedDt = extractDateTimeFields(record.timestamp);
+
+    let reasonText = '';
+    if (String(record.rawConsentVal) === '0') {
+       reasonText = record.reason && record.reason !== 'undefined' && record.reason !== '' ? escapeHtmlString(getLabel('reason', record.reason)) : '';
+    }
+    
+    let supervisorActionColumnMarkup = ``;
+    if (String(record.rawConsentVal) === '0' && !record.isSupervisorUnlockedOverride) {
+      supervisorActionColumnMarkup = `
+        <button class="btn-supervisor-action" onclick="event.stopPropagation(); executeSupervisorAuthorizationOverride('${record.id}')" title="Unlock tracking record loop">
+          <span class="material-icons-round" style="font-size:14px;">lock_open</span> Unlock Case
+        </button>
+      `;
+    } else if (record.isSupervisorUnlockedOverride) {
+      if (record.isBypassConvertedSuccess) {
+        supervisorActionColumnMarkup = `
+          <span style="font-size:11px; font-weight:700; color:var(--color-success-text); display:inline-flex; align-items:center; gap:4px;" title="Converted into successful submission following authorization reset tracking bypass link.">
+            <span class="material-icons-round" style="font-size:14px; color:#137333;">done_all</span> Recovered Success
+          </span>
+        `;
+      } else {
+        supervisorActionColumnMarkup = `
+          <span style="font-size:11px; font-weight:700; color:var(--color-warning-text); display:inline-flex; align-items:center; gap:4px;" title="Reset log verified: ${escapeHtmlString(record.supervisorOverrideData.auditNote)}">
+            <span class="material-icons-round" style="font-size:14px;">assignment_turned_in</span> Unlocked (${escapeHtmlString(record.supervisorOverrideData.authorizedBy)})
+          </span>
+        `;
+      }
+    } else {
+      supervisorActionColumnMarkup = `<span style="color:var(--text-light); font-size:11px;">No Action Needed</span>`;
+    }
+
+    rowElement.innerHTML = `
+      <td style="font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--dri-red-dark);">${escapeHtmlString(record.id)}</td>
+      <td><strong>${escapeHtmlString(record.name || '—')}</strong></td>
+      <td>${escapeHtmlString(record.location || '—')}</td>
+      <td style="text-align:left; padding-left:24px;">
+        <span class="history-counter-badge" title="Total submissions matched">${record.historyCount}</span>
+      </td>
+      <td>
+        <span class="status-pill status-${record.visualCategoryKey}">
+          <span class="material-icons-round">${statusIconName}</span>
+          ${escapeHtmlString(record.status || '—')}
+        </span>
+      </td>
+      <td><strong>${escapeHtmlString(record.consent || '—')}</strong></td>
+      <td style="color:var(--dri-red); font-weight:600; font-size:11.5px; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${reasonText}">${reasonText}</td>
+      <td>${escapeHtmlString(getLabel('enum', record.enumerator))}</td>
+      <td style="font-family:'JetBrains Mono', monospace; font-size:12px;">${escapeHtmlString(extractedDt.date)}</td>
+      <td style="font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--text-muted);">${escapeHtmlString(extractedDt.time)}</td>
+      <td style="text-align: center; background: rgba(254,243,199,0.15); border-left: 1px dashed var(--border-color); border-right: 1px dashed var(--border-color);">${supervisorActionColumnMarkup}</td>
+      <td style="text-align: center;">
+        <button class="btn-view-details" onclick="openRespondentDiagnosticHistoryLogModal('${record.id}')">
+          <span class="material-icons-round">analytics</span> View (${record.historyCount})
+        </button>
+      </td>
+    `;
+    tbody.appendChild(rowElement);
+  });
+}
+
+function calculateSummaryTileCounters(filteredList) {
+  let consented = 0;
+  let rejected = 0;
+  let pending = 0;
+  let totalFormsCountAccumulator = 0;
+  
+  filteredList.forEach(r => {
+    totalFormsCountAccumulator += r.historyCount;
+    if (r.visualCategoryKey === 'success') consented++;
+    else if (r.visualCategoryKey === 'danger') rejected++;
+    else pending++;
+  });
+  
+  document.getElementById('metricTotalSubmissions').innerText = totalFormsCountAccumulator;
+  document.getElementById('metricUniqueRespondents').innerText = filteredList.length;
+  document.getElementById('metricConsented').innerText = consented;
+  document.getElementById('metricRejected').innerText = rejected;
+  document.getElementById('metricPendingCalls').innerText = pending;
+}
+
+function openRespondentDiagnosticHistoryLogModal(respondentId) {
+  const matchRecord = coreAggregatedDataset.find(r => r.id === respondentId);
+  if (!matchRecord || !matchRecord.completeHistoryCallSequence) return;
+  
+  document.getElementById('modalProfileId').innerText = matchRecord.id;
+  document.getElementById('modalProfileName').innerText = matchRecord.name || 'Unregistered Field Respondent';
+  document.getElementById('modalProfileLocation').innerText = matchRecord.location || 'Not Specified';
+  document.getElementById('modalProfileTotalCounter').innerText = `Total Forms Tracked: ${matchRecord.completeHistoryCallSequence.length}`;
+  
+  document.getElementById('modalProfilePhn1').innerText = matchRecord.resp_phn1 || '—';
+  document.getElementById('modalProfilePhn2').innerText = matchRecord.resp_phn2 || '—';
+  
+  let scheduleDisplay = (matchRecord.day_to_call !== '—' || matchRecord.time_to_call !== '—') 
+      ? `<span class="material-icons-round" style="font-size:14px;vertical-align:middle;color:#1E40AF;">calendar_today</span> <strong>${escapeHtmlString(matchRecord.day_to_call)}</strong> &nbsp;|&nbsp; <span class="material-icons-round" style="font-size:14px;vertical-align:middle;color:#1E40AF;">schedule</span> <strong>${escapeHtmlString(matchRecord.time_to_call)}</strong><br><span style="font-size:11px; color:#1E40AF;"><span class="material-icons-round" style="font-size:12px;vertical-align:middle;">call</span> Call To: ${escapeHtmlString(matchRecord.phn_numbe_to_call)} &nbsp;|&nbsp; <span class="material-icons-round" style="font-size:12px;vertical-align:middle;">sticky_note_2</span> Note: ${escapeHtmlString(matchRecord.call_avail)}</span>`
+      : 'No scheduling information available for this respondent.';
+      
+  if (matchRecord.isSupervisorUnlockedOverride) {
+    scheduleDisplay += `<div style="margin-top:8px; padding-top:6px; border-top:1px dashed #BFDBFE; font-size:11.5px; color:var(--color-success-text);">
+      <span class="material-icons-round" style="font-size:14px; vertical-align:middle;">gavel</span> 
+      <strong>Supervisor Logic Override Active:</strong> Case authorized for re-attempt by ${escapeHtmlString(matchRecord.supervisorOverrideData.authorizedBy)} at ${escapeHtmlString(matchRecord.supervisorOverrideData.timestamp.split('T')[0])}. Note: "<em>${escapeHtmlString(matchRecord.supervisorOverrideData.auditNote)}</em>"
+    </div>`;
+  }
+  document.getElementById('modalProfileSchedule').innerHTML = scheduleDisplay;
+
+  const timelineLogsContainer = document.getElementById('respondentHistoryLogsContainer');
+  timelineLogsContainer.innerHTML = '';
+  
+  const totalSubmissions = matchRecord.completeHistoryCallSequence.length;
+  
+  matchRecord.completeHistoryCallSequence.forEach((historyItem, index) => {
+    const historicalTr = document.createElement('tr');
+    historicalTr.className = "history-row-item";
+    
+    const isLatest = (index === totalSubmissions - 1);
+    if (isLatest) {
+      historicalTr.classList.add('is-latest-status');
+    }
+    
+    let cellIcon = "help_outline";
+    let iconColor = "color: var(--text-light);";
+    if (historyItem.status.toLowerCase().includes('available')) { cellIcon = "check_circle"; iconColor = "color: var(--color-success-text);"; }
+    else if (historyItem.status.toLowerCase().includes('wrong') || historyItem.status.toLowerCase().includes('not reachable') || historyItem.status.toLowerCase().includes('phone off')) { cellIcon = "cancel"; iconColor = "color: var(--color-danger-text);"; }
+    else if (historyItem.status.toLowerCase().includes('pick up') || historyItem.status.toLowerCase().includes('no answer')) { cellIcon = "error"; iconColor = "color: var(--color-warning-text);"; }
+
+    const extractedDt = extractDateTimeFields(historyItem.timestamp);
+
+    let reasonTxt = '';
+    if (String(historyItem.rawConsentVal) === '0') {
+       reasonTxt = historyItem.reason && historyItem.reason !== 'undefined' && historyItem.reason !== '' ? escapeHtmlString(getLabel('reason', historyItem.reason)) : '';
+    }
+
+    historicalTr.innerHTML = `
+      <td style="padding:12px; font-weight:700; color:var(--text-muted);">
+        Attempt #${index + 1}
+        ${isLatest ? `<span class="latest-resolution-tag">Final Status</span>` : ''}
+      </td>
+      <td style="padding:12px; font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-main);">
+        <div>${escapeHtmlString(extractedDt.date)}</div>
+        <div style="color:var(--text-muted); font-size:10.5px;">${escapeHtmlString(extractedDt.time)}</div>
+      </td>
+      <td style="padding:12px; font-weight:600; display:flex; align-items:center; gap:8px; border-bottom:none;">
+        <span class="material-icons-round" style="${iconColor} font-size:18px;">${cellIcon}</span>
+        ${escapeHtmlString(historyItem.status || '—')}
+      </td>
+      <td style="padding:12px;"><strong>${escapeHtmlString(historyItem.consent || '—')}</strong></td>
+      <td style="padding:12px; color:var(--dri-red); font-weight:600;">${reasonTxt}</td>
+      <td style="padding:12px;">${escapeHtmlString(getLabel('enum', historyItem.enumerator))}</td>
+      <td style="padding:12px; text-align:center; font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--text-muted);">${escapeHtmlString(historyItem.calls || '1')}</td>
+    `;
+    timelineLogsContainer.appendChild(historicalTr);
+  });
+  
+  launchModalWindow('respondentHistoryDialog');
+}
+
+function exportProjectStructureConfiguration() {
+  if (trackingProjectProfiles.length === 0) return alert("No project configurations to export.");
+  // Strip raw CSV data from export to keep file size small — URLs are retained so anyone can re-sync
+  const exportPayload = trackingProjectProfiles.map(p => ({
+    ...p,
+    tabs: (p.tabs || []).map(t => ({ name: t.name, url: t.url, data: [] }))
+  }));
+  const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: "application/json" });
+  const anchor = document.createElement("a");
+  anchor.download = `dRi_Tracker_Config_${new Date().toISOString().split('T')[0]}.json`;
+  anchor.href = URL.createObjectURL(blob);
+  anchor.click();
+  URL.revokeObjectURL(anchor.href);
+}
+
+function importProjectStructureConfiguration() {
+  const uploader = document.createElement("input");
+  uploader.type = "file";
+  uploader.accept = ".json";
+  uploader.onchange = ev => {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = fileEv => {
+      try {
+        const parsed = JSON.parse(fileEv.target.result);
+        if (!Array.isArray(parsed)) throw new Error("Not an array");
+        parsed.forEach(proj => { if (!proj.overrides) proj.overrides = {}; });
+        trackingProjectProfiles = parsed;
+        localStorage.setItem('dri_cati_system_v10', JSON.stringify(trackingProjectProfiles));
+        alert("Project profiles imported successfully.");
+        renderProjectSidebarView();
+        if (trackingProjectProfiles.length > 0) {
+          activateProjectProfileContext(trackingProjectProfiles[0].id);
+        }
+      } catch(err) {
+        alert("Import failed: file is not a valid dRi Tracker config JSON.");
+      }
+    };
+    reader.readAsText(file);
+  };
+  uploader.click();
+}
+
+function launchModalWindow(id) { document.getElementById(id).classList.add('modal-is-visible'); }
+function dismissModalWindow(id) { document.getElementById(id).classList.remove('modal-is-visible'); }
+function escapeHtmlString(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toggleSidebar() {
+  const sb = document.getElementById('appSidebar');
+  const isCollapsed = sb.classList.toggle('collapsed');
+  localStorage.setItem('dri_sidebar_collapsed', isCollapsed ? '1' : '0');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const sidebarState = localStorage.getItem('dri_sidebar_collapsed');
+  if (sidebarState === null || sidebarState === '1') {
+    document.getElementById('appSidebar').classList.add('collapsed');
+    if (sidebarState === null) localStorage.setItem('dri_sidebar_collapsed', '1');
+  }
+  handleSupervisorIdentityChange(); 
+});
+</script>
+
+</body>
+</html>
